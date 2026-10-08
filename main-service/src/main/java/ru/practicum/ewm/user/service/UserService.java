@@ -55,11 +55,15 @@ public class UserService {
 
     @Transactional
     public void deleteUser(long userId) {
-        User user = userRepository.findById(userId)
+        User user = getUserEntity(userId);
+        userRepository.delete(user);
+    }
+
+    @Transactional(readOnly = true)
+    public User getUserEntity(long userId) {
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(
                         "User with id=" + userId + " was not found"
                 ));
-
-        userRepository.delete(user);
     }
 }
