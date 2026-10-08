@@ -27,8 +27,8 @@ public class EventRequestController {
     }
 
     @PatchMapping
-    public EventRequestStatusUpdateResult updateRequestStatus(@PathVariable long userId, @PathVariable long eventId,
-                                                              @RequestBody EventRequestStatusUpdateRequest updateRequest) {
+    public EventRequestStatusUpdateResult updateRequestStatus(@PathVariable long userId,
+            @PathVariable long eventId, @RequestBody EventRequestStatusUpdateRequest updateRequest) {
         return requestService.updateRequestStatus(userId, eventId, updateRequest);
     }
 }

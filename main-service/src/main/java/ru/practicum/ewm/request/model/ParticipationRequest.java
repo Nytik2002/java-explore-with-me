@@ -23,7 +23,8 @@ import ru.practicum.ewm.user.model.User;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "requests", uniqueConstraints = {@UniqueConstraint(name = "uq_request", columnNames = {"requester_id", "event_id"})})
+@Table(name = "requests", uniqueConstraints = {@UniqueConstraint(name = "uq_request",
+        columnNames = {"requester_id", "event_id"})})
 @Getter
 @Setter
 @Builder

@@ -48,9 +48,16 @@ public class PublicEventService {
 
         Map<Long, Long> views = statisticsService.getViews(eventIds);
 
-        List<EventShortDto> result = events.stream().filter(event -> isAvailable(event, confirmedCounts, onlyAvailable))
-                .map(event -> EventMapper.toEventShortDto(event, confirmedCounts.getOrDefault(event.getId(), 0L),
-                        views.getOrDefault(event.getId(), 0L))).sorted(getComparator(sort)).skip(from).limit(size)
+        List<EventShortDto> result = events.stream()
+                .filter(event -> isAvailable(event, confirmedCounts, onlyAvailable))
+                .map(event -> EventMapper.toEventShortDto(
+                        event,
+                        confirmedCounts.getOrDefault(event.getId(), 0L),
+                        views.getOrDefault(event.getId(), 0L)
+                ))
+                .sorted(getComparator(sort))
+                .skip(from)
+                .limit(size)
                 .toList();
 
         statisticsService.saveHit(uri, ip);

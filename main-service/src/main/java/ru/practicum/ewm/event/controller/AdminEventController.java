@@ -30,19 +30,23 @@ public class AdminEventController {
     private final AdminEventService adminEventService;
 
     @GetMapping
-    public List<EventFullDto> getEvents(@RequestParam(required = false) List<Long> users,
-
-                                        @RequestParam(required = false) List<EventState> states,
-
-                                        @RequestParam(required = false) List<Long> categories,
-
-                                        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
-
-                                        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
-
-                                        @RequestParam(defaultValue = "0") @PositiveOrZero int from,
-
-                                        @RequestParam(defaultValue = "10") @Positive int size) {
+    public List<EventFullDto> getEvents(
+            @RequestParam(required = false) List<Long> users,
+            @RequestParam(required = false) List<EventState> states,
+            @RequestParam(required = false) List<Long> categories,
+            @RequestParam(required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+            LocalDateTime rangeStart,
+            @RequestParam(required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+            LocalDateTime rangeEnd,
+            @RequestParam(defaultValue = "0")
+            @PositiveOrZero
+            int from,
+            @RequestParam(defaultValue = "10")
+            @Positive
+            int size
+    ) {
         return adminEventService.getEvents(users, states, categories, rangeStart, rangeEnd, from, size);
     }
 
