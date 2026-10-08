@@ -3,123 +3,164 @@ package ru.practicum.ewm.exception;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class ErrorHandler {
 
     @ExceptionHandler(NotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ApiError handleNotFoundException(NotFoundException exception) {
-        return createError(
-                exception.getMessage(),
+    public ResponseEntity<ApiError> handleNotFound(
+            NotFoundException exception
+    ) {
+        return createResponse(
+                HttpStatus.NOT_FOUND,
                 "The required object was not found.",
-                HttpStatus.NOT_FOUND
+                exception.getMessage(),
+                List.of()
         );
     }
 
     @ExceptionHandler(ConflictException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ApiError handleConflictException(ConflictException exception) {
-        return createError(
-                exception.getMessage(),
+    public ResponseEntity<ApiError> handleConflict(
+            ConflictException exception
+    ) {
+        return createResponse(
+                HttpStatus.CONFLICT,
                 "For the requested operation the conditions are not met.",
-                HttpStatus.CONFLICT
+                exception.getMessage(),
+                List.of()
         );
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ApiError handleDataIntegrityViolationException(
+    public ResponseEntity<ApiError> handleDataIntegrityViolation(
             DataIntegrityViolationException exception
     ) {
-        return createError(
-                exception.getMessage(),
+        return createResponse(
+                HttpStatus.CONFLICT,
                 "Integrity constraint has been violated.",
-                HttpStatus.CONFLICT
+                exception.getMessage(),
+                List.of()
         );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiError handleMethodArgumentNotValidException(
+    public ResponseEntity<ApiError> handleValidation(
             MethodArgumentNotValidException exception
     ) {
-        List<String> errors = exception.getBindingResult()
+        List<String> errors = exception
+                .getBindingResult()
                 .getFieldErrors()
                 .stream()
                 .map(error ->
-                        "Field: " + error.getField()
-                                + ". Error: " + error.getDefaultMessage()
-                                + ". Value: " + error.getRejectedValue()
+                        "Field: "
+                                + error.getField()
+                                + ". Error: "
+                                + error.getDefaultMessage()
+                                + ". Value: "
+                                + error.getRejectedValue()
                 )
                 .toList();
 
-        return ApiError.builder()
-                .errors(errors)
-                .message(errors.stream().collect(Collectors.joining("; ")))
-                .reason("Incorrectly made request.")
-                .status(HttpStatus.BAD_REQUEST)
-                .timestamp(LocalDateTime.now())
-                .build();
+        String message = String.join("; ", errors);
+
+        return createResponse(
+                HttpStatus.BAD_REQUEST,
+                "Incorrectly made request.",
+                message,
+                errors
+        );
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiError handleConstraintViolationException(
+    public ResponseEntity<ApiError> handleConstraintViolation(
             ConstraintViolationException exception
     ) {
-        return createError(
-                exception.getMessage(),
+        List<String> errors = exception
+                .getConstraintViolations()
+                .stream()
+                .map(violation ->
+                        violation.getPropertyPath()
+                                + ": "
+                                + violation.getMessage()
+                )
+                .toList();
+
+        return createResponse(
+                HttpStatus.BAD_REQUEST,
                 "Incorrectly made request.",
-                HttpStatus.BAD_REQUEST
+                String.join("; ", errors),
+                errors
         );
     }
 
     @ExceptionHandler({
+            MissingServletRequestParameterException.class,
             MethodArgumentTypeMismatchException.class,
             HttpMessageNotReadableException.class,
             IllegalArgumentException.class
     })
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiError handleBadRequestException(Exception exception) {
-        return createError(
-                exception.getMessage(),
+    public ResponseEntity<ApiError> handleBadRequest(
+            Exception exception
+    ) {
+        return createResponse(
+                HttpStatus.BAD_REQUEST,
                 "Incorrectly made request.",
-                HttpStatus.BAD_REQUEST
+                exception.getMessage(),
+                List.of()
+        );
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiError> handleNoResourceFound(
+            NoResourceFoundException exception
+    ) {
+        return createResponse(
+                HttpStatus.NOT_FOUND,
+                "The required object was not found.",
+                exception.getMessage(),
+                List.of()
         );
     }
 
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ApiError handleException(Exception exception) {
-        return createError(
-                exception.getMessage(),
+    public ResponseEntity<ApiError> handleUnexpectedException(
+            Exception exception
+    ) {
+        return createResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
                 "Internal server error.",
-                HttpStatus.INTERNAL_SERVER_ERROR
+                exception.getMessage(),
+                List.of()
         );
     }
 
-    private ApiError createError(
-            String message,
+    private ResponseEntity<ApiError> createResponse(
+            HttpStatus status,
             String reason,
-            HttpStatus status
+            String message,
+            List<String> errors
     ) {
-        return ApiError.builder()
-                .errors(List.of())
+        ApiError apiError = ApiError.builder()
+                .errors(errors)
                 .message(message)
                 .reason(reason)
                 .status(status)
                 .timestamp(LocalDateTime.now())
                 .build();
+
+        return ResponseEntity
+                .status(status)
+                .body(apiError);
     }
 }
