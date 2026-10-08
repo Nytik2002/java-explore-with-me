@@ -10,6 +10,10 @@ import java.util.Optional;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
 
+    @Override
+    @EntityGraph(attributePaths = {"category", "initiator"})
+    Optional<Event> findById(Long eventId);
+
     @EntityGraph(attributePaths = {"category", "initiator"})
     List<Event> findAllByInitiatorId(
             long initiatorId,
@@ -21,4 +25,6 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             long eventId,
             long initiatorId
     );
+
+    boolean existsByCategoryId(long categoryId);
 }

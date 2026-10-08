@@ -17,12 +17,14 @@ import ru.practicum.ewm.event.model.EventState;
 import ru.practicum.ewm.event.repository.EventRepository;
 import ru.practicum.ewm.exception.ConflictException;
 import ru.practicum.ewm.exception.NotFoundException;
+import ru.practicum.ewm.request.service.ParticipationRequestService;
 import ru.practicum.ewm.user.model.User;
 import ru.practicum.ewm.user.service.UserService;
 import ru.practicum.ewm.util.OffsetPageRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -31,16 +33,22 @@ public class EventService {
     private final EventRepository eventRepository;
     private final UserService userService;
     private final CategoryService categoryService;
+    private final ParticipationRequestService requestService;
 
     @Transactional
-    public EventFullDto createEvent(long userId, NewEventDto dto) {
+    public EventFullDto createEvent(
+            long userId,
+            NewEventDto dto
+    ) {
         validateEventDate(dto.getEventDate());
 
-        User user = userService.getUserEntity(userId);
+        User user =
+                userService.getUserEntity(userId);
 
-        Category category = categoryService.getCategoryEntity(
-                dto.getCategory()
-        );
+        Category category =
+                categoryService.getCategoryEntity(
+                        dto.getCategory()
+                );
 
         Event event = EventMapper.toEvent(
                 dto,
@@ -48,7 +56,8 @@ public class EventService {
                 category
         );
 
-        Event savedEvent = eventRepository.save(event);
+        Event savedEvent =
+                eventRepository.save(event);
 
         return EventMapper.toEventFullDto(
                 savedEvent,
@@ -65,23 +74,38 @@ public class EventService {
     ) {
         userService.getUserEntity(userId);
 
-        OffsetPageRequest pageable = new OffsetPageRequest(
-                from,
-                size,
-                Sort.by("id").ascending()
-        );
+        OffsetPageRequest pageable =
+                new OffsetPageRequest(
+                        from,
+                        size,
+                        Sort.by("id").ascending()
+                );
 
-        List<Event> events = eventRepository.findAllByInitiatorId(
-                userId,
-                pageable
-        );
+        List<Event> events =
+                eventRepository.findAllByInitiatorId(
+                        userId,
+                        pageable
+                );
+
+        Map<Long, Long> confirmedCounts =
+                requestService.getConfirmedCounts(
+                        events.stream()
+                                .map(Event::getId)
+                                .toList()
+                );
 
         return events.stream()
-                .map(event -> EventMapper.toEventShortDto(
-                        event,
-                        0L,
-                        0L
-                ))
+                .map(event ->
+                        EventMapper.toEventShortDto(
+                                event,
+                                confirmedCounts
+                                        .getOrDefault(
+                                                event.getId(),
+                                                0L
+                                        ),
+                                0L
+                        )
+                )
                 .toList();
     }
 
@@ -90,14 +114,20 @@ public class EventService {
             long userId,
             long eventId
     ) {
-        Event event = getUserEventEntity(
-                userId,
-                eventId
-        );
+        Event event =
+                getUserEventEntity(
+                        userId,
+                        eventId
+                );
+
+        long confirmedRequests =
+                requestService.getConfirmedCount(
+                        eventId
+                );
 
         return EventMapper.toEventFullDto(
                 event,
-                0L,
+                confirmedRequests,
                 0L
         );
     }
@@ -108,46 +138,66 @@ public class EventService {
             long eventId,
             UpdateEventUserRequest request
     ) {
-        Event event = getUserEventEntity(
-                userId,
-                eventId
-        );
+        Event event =
+                getUserEventEntity(
+                        userId,
+                        eventId
+                );
 
         if (event.getState() != EventState.PENDING
-                && event.getState() != EventState.CANCELED) {
+                && event.getState()
+                != EventState.CANCELED) {
             throw new ConflictException(
-                    "Only pending or canceled events can be changed"
+                    "Only pending or canceled "
+                            + "events can be changed"
             );
         }
 
         if (request.getAnnotation() != null) {
-            event.setAnnotation(request.getAnnotation());
+            event.setAnnotation(
+                    request.getAnnotation()
+            );
         }
 
         if (request.getCategory() != null) {
-            Category category = categoryService.getCategoryEntity(
-                    request.getCategory()
-            );
+            Category category =
+                    categoryService.getCategoryEntity(
+                            request.getCategory()
+                    );
 
             event.setCategory(category);
         }
 
         if (request.getDescription() != null) {
-            event.setDescription(request.getDescription());
+            event.setDescription(
+                    request.getDescription()
+            );
         }
 
         if (request.getEventDate() != null) {
-            validateEventDate(request.getEventDate());
-            event.setEventDate(request.getEventDate());
+            validateEventDate(
+                    request.getEventDate()
+            );
+
+            event.setEventDate(
+                    request.getEventDate()
+            );
         }
 
         if (request.getLocation() != null) {
-            event.setLat(request.getLocation().getLat());
-            event.setLon(request.getLocation().getLon());
+            event.setLat(
+                    request.getLocation().getLat()
+            );
+
+            event.setLon(
+                    request.getLocation().getLon()
+            );
         }
 
         if (request.getPaid() != null) {
-            event.setPaid(request.getPaid());
+            event.setPaid(
+                    request.getPaid()
+            );
         }
 
         if (request.getParticipantLimit() != null) {
@@ -163,7 +213,9 @@ public class EventService {
         }
 
         if (request.getTitle() != null) {
-            event.setTitle(request.getTitle());
+            event.setTitle(
+                    request.getTitle()
+            );
         }
 
         changeState(
@@ -171,9 +223,14 @@ public class EventService {
                 request.getStateAction()
         );
 
+        long confirmedRequests =
+                requestService.getConfirmedCount(
+                        eventId
+                );
+
         return EventMapper.toEventFullDto(
                 event,
-                0L,
+                confirmedRequests,
                 0L
         );
     }
@@ -181,9 +238,13 @@ public class EventService {
     @Transactional(readOnly = true)
     public Event getEventEntity(long eventId) {
         return eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(
-                        "Event with id=" + eventId + " was not found"
-                ));
+                .orElseThrow(() ->
+                        new NotFoundException(
+                                "Event with id="
+                                        + eventId
+                                        + " was not found"
+                        )
+                );
     }
 
     private Event getUserEventEntity(
@@ -195,21 +256,26 @@ public class EventService {
                         eventId,
                         userId
                 )
-                .orElseThrow(() -> new NotFoundException(
-                        "Event with id=" + eventId
-                                + " was not found"
-                ));
+                .orElseThrow(() ->
+                        new NotFoundException(
+                                "Event with id="
+                                        + eventId
+                                        + " was not found"
+                        )
+                );
     }
 
     private void validateEventDate(
             LocalDateTime eventDate
     ) {
         LocalDateTime minimumDate =
-                LocalDateTime.now().plusHours(2);
+                LocalDateTime.now()
+                        .plusHours(2);
 
         if (eventDate.isBefore(minimumDate)) {
             throw new ConflictException(
-                    "Event date must be at least 2 hours from now"
+                    "Event date must be at least "
+                            + "2 hours from now"
             );
         }
     }
@@ -224,12 +290,16 @@ public class EventService {
 
         if (stateAction
                 == UserEventStateAction.SEND_TO_REVIEW) {
-            event.setState(EventState.PENDING);
+            event.setState(
+                    EventState.PENDING
+            );
         }
 
         if (stateAction
                 == UserEventStateAction.CANCEL_REVIEW) {
-            event.setState(EventState.CANCELED);
+            event.setState(
+                    EventState.CANCELED
+            );
         }
     }
 }
