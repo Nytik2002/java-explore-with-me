@@ -27,40 +27,22 @@ public class StatsController {
 
     @PostMapping("/hit")
     @ResponseStatus(HttpStatus.CREATED)
-    public void saveHit(
-            @RequestBody EndpointHit endpointHit
-    ) {
+    public void saveHit(@RequestBody EndpointHit endpointHit) {
         statsService.saveHit(endpointHit);
     }
 
     @GetMapping("/stats")
-    public List<ViewStats> getStats(
-            @RequestParam
-            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-            LocalDateTime start,
+    public List<ViewStats> getStats(@RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime start,
 
-            @RequestParam
-            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-            LocalDateTime end,
+                                    @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
 
-            @RequestParam(required = false)
-            List<String> uris,
+                                    @RequestParam(required = false) List<String> uris,
 
-            @RequestParam(defaultValue = "false")
-            boolean unique
-    ) {
+                                    @RequestParam(defaultValue = "false") boolean unique) {
         if (start.isAfter(end)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Start date must be before end date"
-            );
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Start date must be before end date");
         }
 
-        return statsService.getStats(
-                start,
-                end,
-                uris,
-                unique
-        );
+        return statsService.getStats(start, end, uris, unique);
     }
 }

@@ -25,90 +25,50 @@ public class CategoryService {
 
     @Transactional
     public CategoryDto createCategory(NewCategoryDto dto) {
-        Category category =
-                CategoryMapper.toCategory(dto);
+        Category category = CategoryMapper.toCategory(dto);
 
-        Category savedCategory =
-                categoryRepository.save(category);
+        Category savedCategory = categoryRepository.save(category);
 
-        return CategoryMapper.toCategoryDto(
-                savedCategory
-        );
+        return CategoryMapper.toCategoryDto(savedCategory);
     }
 
     @Transactional
-    public CategoryDto updateCategory(
-            long categoryId,
-            CategoryDto dto
-    ) {
-        Category category =
-                getCategoryEntity(categoryId);
+    public CategoryDto updateCategory(long categoryId, CategoryDto dto) {
+        Category category = getCategoryEntity(categoryId);
 
         category.setName(dto.getName());
 
-        Category savedCategory =
-                categoryRepository.save(category);
+        Category savedCategory = categoryRepository.save(category);
 
-        return CategoryMapper.toCategoryDto(
-                savedCategory
-        );
+        return CategoryMapper.toCategoryDto(savedCategory);
     }
 
     @Transactional
     public void deleteCategory(long categoryId) {
-        Category category =
-                getCategoryEntity(categoryId);
+        Category category = getCategoryEntity(categoryId);
 
-        if (eventRepository.existsByCategoryId(
-                categoryId
-        )) {
-            throw new ConflictException(
-                    "The category is not empty"
-            );
+        if (eventRepository.existsByCategoryId(categoryId)) {
+            throw new ConflictException("The category is not empty");
         }
 
         categoryRepository.delete(category);
     }
 
     @Transactional(readOnly = true)
-    public List<CategoryDto> getCategories(
-            int from,
-            int size
-    ) {
-        OffsetPageRequest pageable =
-                new OffsetPageRequest(
-                        from,
-                        size,
-                        Sort.by("id").ascending()
-                );
+    public List<CategoryDto> getCategories(int from, int size) {
+        OffsetPageRequest pageable = new OffsetPageRequest(from, size, Sort.by("id").ascending());
 
-        return categoryRepository
-                .findAllBy(pageable)
-                .stream()
-                .map(CategoryMapper::toCategoryDto)
-                .toList();
+        return categoryRepository.findAllBy(pageable).stream().map(CategoryMapper::toCategoryDto).toList();
     }
 
     @Transactional(readOnly = true)
     public CategoryDto getCategory(long categoryId) {
-        return CategoryMapper.toCategoryDto(
-                getCategoryEntity(categoryId)
-        );
+        return CategoryMapper.toCategoryDto(getCategoryEntity(categoryId));
     }
 
     @Transactional(readOnly = true)
-    public Category getCategoryEntity(
-            long categoryId
-    ) {
-        return categoryRepository.findById(
-                        categoryId
-                )
-                .orElseThrow(
-                        () -> new NotFoundException(
-                                "Category with id="
-                                        + categoryId
-                                        + " was not found"
-                        )
-                );
+    public Category getCategoryEntity(long categoryId) {
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new NotFoundException("Category with id=" + categoryId + " was not found"));
     }
 }

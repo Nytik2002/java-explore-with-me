@@ -30,21 +30,15 @@ public class AdminUserController {
     private final UserService userService;
 
     @GetMapping
-    public List<UserDto> getUsers(
-            @RequestParam(required = false) List<Long> ids,
-            @RequestParam(defaultValue = "0")
-            @PositiveOrZero int from,
-            @RequestParam(defaultValue = "10")
-            @Positive int size
-    ) {
+    public List<UserDto> getUsers(@RequestParam(required = false) List<Long> ids,
+                                  @RequestParam(defaultValue = "0") @PositiveOrZero int from,
+                                  @RequestParam(defaultValue = "10") @Positive int size) {
         return userService.getUsers(ids, from, size);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto createUser(
-            @Valid @RequestBody NewUserRequest request
-    ) {
+    public UserDto createUser(@Valid @RequestBody NewUserRequest request) {
         return userService.createUser(request);
     }
 

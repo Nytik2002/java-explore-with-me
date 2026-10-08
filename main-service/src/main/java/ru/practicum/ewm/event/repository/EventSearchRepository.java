@@ -23,95 +23,45 @@ public class EventSearchRepository {
     @PersistenceContext
     private EntityManager entityManager;
 
-    public List<Event> findAdminEvents(
-            List<Long> users,
-            List<EventState> states,
-            List<Long> categories,
-            LocalDateTime rangeStart,
-            LocalDateTime rangeEnd,
-            int from,
-            int size
-    ) {
-        CriteriaBuilder builder =
-                entityManager.getCriteriaBuilder();
+    public List<Event> findAdminEvents(List<Long> users, List<EventState> states, List<Long> categories,
+                                       LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
 
-        CriteriaQuery<Event> query =
-                builder.createQuery(Event.class);
+        CriteriaQuery<Event> query = builder.createQuery(Event.class);
 
-        Root<Event> event =
-                query.from(Event.class);
+        Root<Event> event = query.from(Event.class);
 
-        event.fetch(
-                "category",
-                JoinType.INNER
-        );
+        event.fetch("category", JoinType.INNER);
 
-        event.fetch(
-                "initiator",
-                JoinType.INNER
-        );
+        event.fetch("initiator", JoinType.INNER);
 
-        List<Predicate> predicates =
-                new ArrayList<>();
+        List<Predicate> predicates = new ArrayList<>();
 
         if (users != null && !users.isEmpty()) {
-            predicates.add(
-                    event.get("initiator")
-                            .get("id")
-                            .in(users)
-            );
+            predicates.add(event.get("initiator").get("id").in(users));
         }
 
         if (states != null && !states.isEmpty()) {
-            predicates.add(
-                    event.get("state")
-                            .in(states)
-            );
+            predicates.add(event.get("state").in(states));
         }
 
-        if (categories != null
-                && !categories.isEmpty()) {
-            predicates.add(
-                    event.get("category")
-                            .get("id")
-                            .in(categories)
-            );
+        if (categories != null && !categories.isEmpty()) {
+            predicates.add(event.get("category").get("id").in(categories));
         }
 
         if (rangeStart != null) {
-            predicates.add(
-                    builder.greaterThanOrEqualTo(
-                            event.<LocalDateTime>
-                                    get("eventDate"),
-                            rangeStart
-                    )
-            );
+            predicates.add(builder.greaterThanOrEqualTo(event.<LocalDateTime>get("eventDate"), rangeStart));
         }
 
         if (rangeEnd != null) {
-            predicates.add(
-                    builder.lessThanOrEqualTo(
-                            event.<LocalDateTime>
-                                    get("eventDate"),
-                            rangeEnd
-                    )
-            );
+            predicates.add(builder.lessThanOrEqualTo(event.<LocalDateTime>get("eventDate"), rangeEnd));
         }
 
-        query.where(
-                predicates.toArray(
-                        Predicate[]::new
-                )
-        );
+        query.where(predicates.toArray(Predicate[]::new));
 
-        query.orderBy(
-                builder.asc(
-                        event.get("id")
-                )
-        );
+        query.orderBy(builder.asc(event.get("id")));
 
-        TypedQuery<Event> typedQuery =
-                entityManager.createQuery(query);
+        TypedQuery<Event> typedQuery = entityManager.createQuery(query);
 
         typedQuery.setFirstResult(from);
         typedQuery.setMaxResults(size);
@@ -119,128 +69,52 @@ public class EventSearchRepository {
         return typedQuery.getResultList();
     }
 
-    public List<Event> findPublicEvents(
-            String text,
-            List<Long> categories,
-            Boolean paid,
-            LocalDateTime rangeStart,
-            LocalDateTime rangeEnd
-    ) {
-        CriteriaBuilder builder =
-                entityManager.getCriteriaBuilder();
+    public List<Event> findPublicEvents(String text, List<Long> categories, Boolean paid, LocalDateTime rangeStart,
+                                        LocalDateTime rangeEnd) {
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
 
-        CriteriaQuery<Event> query =
-                builder.createQuery(Event.class);
+        CriteriaQuery<Event> query = builder.createQuery(Event.class);
 
-        Root<Event> event =
-                query.from(Event.class);
+        Root<Event> event = query.from(Event.class);
 
-        event.fetch(
-                "category",
-                JoinType.INNER
-        );
+        event.fetch("category", JoinType.INNER);
 
-        event.fetch(
-                "initiator",
-                JoinType.INNER
-        );
+        event.fetch("initiator", JoinType.INNER);
 
-        List<Predicate> predicates =
-                new ArrayList<>();
+        List<Predicate> predicates = new ArrayList<>();
 
-        predicates.add(
-                builder.equal(
-                        event.get("state"),
-                        EventState.PUBLISHED
-                )
-        );
+        predicates.add(builder.equal(event.get("state"), EventState.PUBLISHED));
 
         if (text != null) {
-            String searchText =
-                    "%"
-                            + text.toLowerCase(
-                            Locale.ROOT
-                    )
-                            + "%";
+            String searchText = "%" + text.toLowerCase(Locale.ROOT) + "%";
 
-            Predicate annotationContains =
-                    builder.like(
-                            builder.lower(
-                                    event.<String>
-                                            get("annotation")
-                            ),
-                            searchText
-                    );
+            Predicate annotationContains = builder.like(builder.lower(event.<String>get("annotation")), searchText);
 
-            Predicate descriptionContains =
-                    builder.like(
-                            builder.lower(
-                                    event.<String>
-                                            get("description")
-                            ),
-                            searchText
-                    );
+            Predicate descriptionContains = builder.like(builder.lower(event.<String>get("description")), searchText);
 
-            predicates.add(
-                    builder.or(
-                            annotationContains,
-                            descriptionContains
-                    )
-            );
+            predicates.add(builder.or(annotationContains, descriptionContains));
         }
 
-        if (categories != null
-                && !categories.isEmpty()) {
-            predicates.add(
-                    event.get("category")
-                            .get("id")
-                            .in(categories)
-            );
+        if (categories != null && !categories.isEmpty()) {
+            predicates.add(event.get("category").get("id").in(categories));
         }
 
         if (paid != null) {
-            predicates.add(
-                    builder.equal(
-                            event.get("paid"),
-                            paid
-                    )
-            );
+            predicates.add(builder.equal(event.get("paid"), paid));
         }
 
         if (rangeStart != null) {
-            predicates.add(
-                    builder.greaterThanOrEqualTo(
-                            event.<LocalDateTime>
-                                    get("eventDate"),
-                            rangeStart
-                    )
-            );
+            predicates.add(builder.greaterThanOrEqualTo(event.<LocalDateTime>get("eventDate"), rangeStart));
         }
 
         if (rangeEnd != null) {
-            predicates.add(
-                    builder.lessThanOrEqualTo(
-                            event.<LocalDateTime>
-                                    get("eventDate"),
-                            rangeEnd
-                    )
-            );
+            predicates.add(builder.lessThanOrEqualTo(event.<LocalDateTime>get("eventDate"), rangeEnd));
         }
 
-        query.where(
-                predicates.toArray(
-                        Predicate[]::new
-                )
-        );
+        query.where(predicates.toArray(Predicate[]::new));
 
-        query.orderBy(
-                builder.asc(
-                        event.get("id")
-                )
-        );
+        query.orderBy(builder.asc(event.get("id")));
 
-        return entityManager
-                .createQuery(query)
-                .getResultList();
+        return entityManager.createQuery(query).getResultList();
     }
 }

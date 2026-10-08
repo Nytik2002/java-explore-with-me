@@ -27,12 +27,7 @@ public class StatsService {
         hitRepository.save(hit);
     }
 
-    public List<ViewStats> getStats(
-            LocalDateTime start,
-            LocalDateTime end,
-            List<String> uris,
-            boolean unique
-    ) {
+    public List<ViewStats> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
         boolean hasUris = uris != null && !uris.isEmpty();
 
         if (unique) {

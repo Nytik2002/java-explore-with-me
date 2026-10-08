@@ -23,12 +23,8 @@ public class PublicCategoryController {
     private final CategoryService categoryService;
 
     @GetMapping
-    public List<CategoryDto> getCategories(
-            @RequestParam(defaultValue = "0")
-            @PositiveOrZero int from,
-            @RequestParam(defaultValue = "10")
-            @Positive int size
-    ) {
+    public List<CategoryDto> getCategories(@RequestParam(defaultValue = "0") @PositiveOrZero int from,
+                                           @RequestParam(defaultValue = "10") @Positive int size) {
         return categoryService.getCategories(from, size);
     }
 

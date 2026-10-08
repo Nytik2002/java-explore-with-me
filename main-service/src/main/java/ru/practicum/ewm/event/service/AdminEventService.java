@@ -31,261 +31,136 @@ public class AdminEventService {
     private final ParticipationRequestService requestService;
 
     @Transactional(readOnly = true)
-    public List<EventFullDto> getEvents(
-            List<Long> users,
-            List<EventState> states,
-            List<Long> categories,
-            LocalDateTime rangeStart,
-            LocalDateTime rangeEnd,
-            int from,
-            int size
-    ) {
-        validateDateRange(
-                rangeStart,
-                rangeEnd
-        );
+    public List<EventFullDto> getEvents(List<Long> users, List<EventState> states, List<Long> categories,
+                                        LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
+        validateDateRange(rangeStart, rangeEnd);
 
         List<Event> events =
-                eventSearchRepository.findAdminEvents(
-                        users,
-                        states,
-                        categories,
-                        rangeStart,
-                        rangeEnd,
-                        from,
-                        size
-                );
+                eventSearchRepository.findAdminEvents(users, states, categories, rangeStart, rangeEnd, from, size);
 
-        Map<Long, Long> confirmedCounts =
-                requestService.getConfirmedCounts(
-                        events.stream()
-                                .map(Event::getId)
-                                .toList()
-                );
+        Map<Long, Long> confirmedCounts = requestService.getConfirmedCounts(events.stream().map(Event::getId).toList());
 
         return events.stream()
-                .map(event ->
-                        EventMapper.toEventFullDto(
-                                event,
-                                confirmedCounts
-                                        .getOrDefault(
-                                                event.getId(),
-                                                0L
-                                        ),
-                                0L
-                        )
-                )
+                .map(event -> EventMapper.toEventFullDto(event, confirmedCounts.getOrDefault(event.getId(), 0L), 0L))
                 .toList();
     }
 
     @Transactional
-    public EventFullDto updateEvent(
-            long eventId,
-            UpdateEventAdminRequest request
-    ) {
-        Event event =
-                eventRepository.findById(eventId)
-                        .orElseThrow(() ->
-                                new NotFoundException(
-                                        "Event with id="
-                                                + eventId
-                                                + " was not found"
-                                )
-                        );
+    public EventFullDto updateEvent(long eventId, UpdateEventAdminRequest request) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
-        updateFields(
-                event,
-                request
-        );
+        updateFields(event, request);
 
-        changeState(
-                event,
-                request.getStateAction()
-        );
+        changeState(event, request.getStateAction());
 
-        Event savedEvent =
-                eventRepository.save(event);
+        Event savedEvent = eventRepository.save(event);
 
-        long confirmedRequests =
-                requestService.getConfirmedCount(
-                        eventId
-                );
+        long confirmedRequests = requestService.getConfirmedCount(eventId);
 
-        return EventMapper.toEventFullDto(
-                savedEvent,
-                confirmedRequests,
-                0L
-        );
+        return EventMapper.toEventFullDto(savedEvent, confirmedRequests, 0L);
     }
 
-    private void updateFields(
-            Event event,
-            UpdateEventAdminRequest request
-    ) {
+    private void updateFields(Event event, UpdateEventAdminRequest request) {
         if (request.getAnnotation() != null) {
-            event.setAnnotation(
-                    request.getAnnotation()
-            );
+            event.setAnnotation(request.getAnnotation());
         }
 
         if (request.getCategory() != null) {
-            Category category =
-                    categoryService.getCategoryEntity(
-                            request.getCategory()
-                    );
+            Category category = categoryService.getCategoryEntity(request.getCategory());
 
             event.setCategory(category);
         }
 
         if (request.getDescription() != null) {
-            event.setDescription(
-                    request.getDescription()
-            );
+            event.setDescription(request.getDescription());
         }
 
         if (request.getEventDate() != null) {
-            validateAdminEventDate(
-                    event,
-                    request.getEventDate()
-            );
+            validateAdminEventDate(event, request.getEventDate());
 
-            event.setEventDate(
-                    request.getEventDate()
-            );
+            event.setEventDate(request.getEventDate());
         }
 
         if (request.getLocation() != null) {
-            event.setLat(
-                    request.getLocation().getLat()
-            );
+            event.setLat(request.getLocation().getLat());
 
-            event.setLon(
-                    request.getLocation().getLon()
-            );
+            event.setLon(request.getLocation().getLon());
         }
 
         if (request.getPaid() != null) {
-            event.setPaid(
-                    request.getPaid()
-            );
+            event.setPaid(request.getPaid());
         }
 
         if (request.getParticipantLimit() != null) {
-            event.setParticipantLimit(
-                    request.getParticipantLimit()
-            );
+            event.setParticipantLimit(request.getParticipantLimit());
         }
 
         if (request.getRequestModeration() != null) {
-            event.setRequestModeration(
-                    request.getRequestModeration()
-            );
+            event.setRequestModeration(request.getRequestModeration());
         }
 
         if (request.getTitle() != null) {
-            event.setTitle(
-                    request.getTitle()
-            );
+            event.setTitle(request.getTitle());
         }
     }
 
-    private void changeState(
-            Event event,
-            AdminEventStateAction stateAction
-    ) {
+    private void changeState(Event event, AdminEventStateAction stateAction) {
         if (stateAction == null) {
             return;
         }
 
-        if (stateAction
-                == AdminEventStateAction.PUBLISH_EVENT) {
+        if (stateAction == AdminEventStateAction.PUBLISH_EVENT) {
             publishEvent(event);
         }
 
-        if (stateAction
-                == AdminEventStateAction.REJECT_EVENT) {
+        if (stateAction == AdminEventStateAction.REJECT_EVENT) {
             rejectEvent(event);
         }
     }
 
     private void publishEvent(Event event) {
-        if (event.getState()
-                != EventState.PENDING) {
+        if (event.getState() != EventState.PENDING) {
             throw new ConflictException(
-                    "Cannot publish the event because "
-                            + "it's not in the right state: "
-                            + event.getState()
-            );
+                    "Cannot publish the event because " + "it's not in the right state: " + event.getState());
         }
 
-        LocalDateTime publicationTime =
-                LocalDateTime.now();
+        LocalDateTime publicationTime = LocalDateTime.now();
 
-        if (event.getEventDate().isBefore(
-                publicationTime.plusHours(1)
-        )) {
-            throw new ConflictException(
-                    "Event date must be at least "
-                            + "1 hour after publication"
-            );
+        if (event.getEventDate().isBefore(publicationTime.plusHours(1))) {
+            throw new ConflictException("Event date must be at least " + "1 hour after publication");
         }
 
-        event.setState(
-                EventState.PUBLISHED
-        );
+        event.setState(EventState.PUBLISHED);
 
-        event.setPublishedOn(
-                publicationTime
-        );
+        event.setPublishedOn(publicationTime);
     }
 
     private void rejectEvent(Event event) {
-        if (event.getState()
-                == EventState.PUBLISHED) {
-            throw new ConflictException(
-                    "Published event cannot be rejected"
-            );
+        if (event.getState() == EventState.PUBLISHED) {
+            throw new ConflictException("Published event cannot be rejected");
         }
 
-        event.setState(
-                EventState.CANCELED
-        );
+        event.setState(EventState.CANCELED);
     }
 
-    private void validateAdminEventDate(
-            Event event,
-            LocalDateTime eventDate
-    ) {
+    private void validateAdminEventDate(Event event, LocalDateTime eventDate) {
         LocalDateTime minimumDate;
 
         if (event.getPublishedOn() != null) {
-            minimumDate =
-                    event.getPublishedOn()
-                            .plusHours(1);
+            minimumDate = event.getPublishedOn().plusHours(1);
         } else {
-            minimumDate =
-                    LocalDateTime.now()
-                            .plusHours(1);
+            minimumDate = LocalDateTime.now().plusHours(1);
         }
 
         if (eventDate.isBefore(minimumDate)) {
-            throw new IllegalArgumentException(
-                    "Event date must be at least "
-                            + "1 hour after publication"
-            );
+            throw new IllegalArgumentException("Event date must be at least " + "1 hour after publication");
         }
     }
 
-    private void validateDateRange(
-            LocalDateTime rangeStart,
-            LocalDateTime rangeEnd
-    ) {
-        if (rangeStart != null
-                && rangeEnd != null
-                && rangeStart.isAfter(rangeEnd)) {
-            throw new IllegalArgumentException(
-                    "Range start must be before range end"
-            );
+    private void validateDateRange(LocalDateTime rangeStart, LocalDateTime rangeEnd) {
+        if (rangeStart != null && rangeEnd != null && rangeStart.isAfter(rangeEnd)) {
+            throw new IllegalArgumentException("Range start must be before range end");
         }
     }
 }

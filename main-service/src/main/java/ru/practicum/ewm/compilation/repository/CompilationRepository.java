@@ -10,17 +10,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-public interface CompilationRepository
-        extends JpaRepository<Compilation, Long> {
+public interface CompilationRepository extends JpaRepository<Compilation, Long> {
 
     @Query("""
             select c.id
             from Compilation c
             order by c.id
             """)
-    List<Long> findCompilationIds(
-            Pageable pageable
-    );
+    List<Long> findCompilationIds(Pageable pageable);
 
     @Query("""
             select c.id
@@ -28,10 +25,7 @@ public interface CompilationRepository
             where c.pinned = :pinned
             order by c.id
             """)
-    List<Long> findCompilationIdsByPinned(
-            @Param("pinned") boolean pinned,
-            Pageable pageable
-    );
+    List<Long> findCompilationIdsByPinned(@Param("pinned") boolean pinned, Pageable pageable);
 
     @Query("""
             select distinct c
@@ -41,9 +35,7 @@ public interface CompilationRepository
             left join fetch e.initiator
             where c.id in :ids
             """)
-    List<Compilation> findAllWithEventsByIdIn(
-            @Param("ids") Collection<Long> ids
-    );
+    List<Compilation> findAllWithEventsByIdIn(@Param("ids") Collection<Long> ids);
 
     @Query("""
             select distinct c
@@ -53,7 +45,5 @@ public interface CompilationRepository
             left join fetch e.initiator
             where c.id = :id
             """)
-    Optional<Compilation> findWithEventsById(
-            @Param("id") long id
-    );
+    Optional<Compilation> findWithEventsById(@Param("id") long id);
 }

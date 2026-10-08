@@ -17,51 +17,17 @@ public final class CompilationMapper {
     private CompilationMapper() {
     }
 
-    public static Compilation toCompilation(
-            NewCompilationDto dto,
-            Set<Event> events
-    ) {
-        return Compilation.builder()
-                .events(events)
-                .pinned(dto.isPinned())
-                .title(dto.getTitle())
-                .build();
+    public static Compilation toCompilation(NewCompilationDto dto, Set<Event> events) {
+        return Compilation.builder().events(events).pinned(dto.isPinned()).title(dto.getTitle()).build();
     }
 
-    public static CompilationDto toDto(
-            Compilation compilation,
-            Map<Long, Long> confirmedCounts,
-            Map<Long, Long> views
-    ) {
-        List<EventShortDto> events =
-                compilation.getEvents()
-                        .stream()
-                        .sorted(
-                                Comparator.comparing(
-                                        Event::getId
-                                )
-                        )
-                        .map(event ->
-                                EventMapper.toEventShortDto(
-                                        event,
-                                        confirmedCounts
-                                                .getOrDefault(
-                                                        event.getId(),
-                                                        0L
-                                                ),
-                                        views.getOrDefault(
-                                                event.getId(),
-                                                0L
-                                        )
-                                )
-                        )
-                        .toList();
+    public static CompilationDto toDto(Compilation compilation, Map<Long, Long> confirmedCounts,
+                                       Map<Long, Long> views) {
+        List<EventShortDto> events = compilation.getEvents().stream().sorted(Comparator.comparing(Event::getId))
+                .map(event -> EventMapper.toEventShortDto(event, confirmedCounts.getOrDefault(event.getId(), 0L),
+                        views.getOrDefault(event.getId(), 0L))).toList();
 
-        return CompilationDto.builder()
-                .id(compilation.getId())
-                .events(events)
-                .pinned(compilation.isPinned())
-                .title(compilation.getTitle())
-                .build();
+        return CompilationDto.builder().id(compilation.getId()).events(events).pinned(compilation.isPinned())
+                .title(compilation.getTitle()).build();
     }
 }

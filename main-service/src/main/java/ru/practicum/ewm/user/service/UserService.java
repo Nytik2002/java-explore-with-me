@@ -29,16 +29,8 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public List<UserDto> getUsers(
-            List<Long> ids,
-            int from,
-            int size
-    ) {
-        OffsetPageRequest pageable = new OffsetPageRequest(
-                from,
-                size,
-                Sort.by("id").ascending()
-        );
+    public List<UserDto> getUsers(List<Long> ids, int from, int size) {
+        OffsetPageRequest pageable = new OffsetPageRequest(from, size, Sort.by("id").ascending());
 
         List<User> users;
 
@@ -48,9 +40,7 @@ public class UserService {
             users = userRepository.findAllByIdIn(ids, pageable);
         }
 
-        return users.stream()
-                .map(UserMapper::toUserDto)
-                .toList();
+        return users.stream().map(UserMapper::toUserDto).toList();
     }
 
     @Transactional
@@ -62,8 +52,6 @@ public class UserService {
     @Transactional(readOnly = true)
     public User getUserEntity(long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(
-                        "User with id=" + userId + " was not found"
-                ));
+                .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
     }
 }

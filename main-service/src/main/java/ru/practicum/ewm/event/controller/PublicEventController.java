@@ -29,65 +29,31 @@ public class PublicEventController {
     private final PublicEventService publicEventService;
 
     @GetMapping
-    public List<EventShortDto> getEvents(
-            @RequestParam(required = false)
-            @Size(min = 1, max = 7000)
-            String text,
+    public List<EventShortDto> getEvents(@RequestParam(required = false) @Size(min = 1, max = 7000) String text,
 
-            @RequestParam(required = false)
-            List<Long> categories,
+                                         @RequestParam(required = false) List<Long> categories,
 
-            @RequestParam(required = false)
-            Boolean paid,
+                                         @RequestParam(required = false) Boolean paid,
 
-            @RequestParam(required = false)
-            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-            LocalDateTime rangeStart,
+                                         @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
 
-            @RequestParam(required = false)
-            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-            LocalDateTime rangeEnd,
+                                         @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
 
-            @RequestParam(defaultValue = "false")
-            boolean onlyAvailable,
+                                         @RequestParam(defaultValue = "false") boolean onlyAvailable,
 
-            @RequestParam(required = false)
-            EventSort sort,
+                                         @RequestParam(required = false) EventSort sort,
 
-            @RequestParam(defaultValue = "0")
-            @PositiveOrZero
-            int from,
+                                         @RequestParam(defaultValue = "0") @PositiveOrZero int from,
 
-            @RequestParam(defaultValue = "10")
-            @Positive
-            int size,
+                                         @RequestParam(defaultValue = "10") @Positive int size,
 
-            HttpServletRequest request
-    ) {
-        return publicEventService.getEvents(
-                text,
-                categories,
-                paid,
-                rangeStart,
-                rangeEnd,
-                onlyAvailable,
-                sort,
-                from,
-                size,
-                request.getRequestURI(),
-                request.getRemoteAddr()
-        );
+                                         HttpServletRequest request) {
+        return publicEventService.getEvents(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from,
+                size, request.getRequestURI(), request.getRemoteAddr());
     }
 
     @GetMapping("/{id}")
-    public EventFullDto getEvent(
-            @PathVariable long id,
-            HttpServletRequest request
-    ) {
-        return publicEventService.getEvent(
-                id,
-                request.getRequestURI(),
-                request.getRemoteAddr()
-        );
+    public EventFullDto getEvent(@PathVariable long id, HttpServletRequest request) {
+        return publicEventService.getEvent(id, request.getRequestURI(), request.getRemoteAddr());
     }
 }

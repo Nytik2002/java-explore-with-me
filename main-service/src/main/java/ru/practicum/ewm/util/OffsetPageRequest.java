@@ -45,11 +45,7 @@ public class OffsetPageRequest implements Pageable {
 
     @Override
     public Pageable next() {
-        return new OffsetPageRequest(
-                offset + pageSize,
-                pageSize,
-                sort
-        );
+        return new OffsetPageRequest(offset + pageSize, pageSize, sort);
     }
 
     @Override
@@ -58,11 +54,7 @@ public class OffsetPageRequest implements Pageable {
             return first();
         }
 
-        return new OffsetPageRequest(
-                Math.max(offset - pageSize, 0),
-                pageSize,
-                sort
-        );
+        return new OffsetPageRequest(Math.max(offset - pageSize, 0), pageSize, sort);
     }
 
     @Override
@@ -72,11 +64,7 @@ public class OffsetPageRequest implements Pageable {
 
     @Override
     public Pageable withPage(int pageNumber) {
-        return new OffsetPageRequest(
-                pageNumber * pageSize,
-                pageSize,
-                sort
-        );
+        return new OffsetPageRequest(pageNumber * pageSize, pageSize, sort);
     }
 
     @Override

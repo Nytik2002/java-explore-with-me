@@ -15,36 +15,20 @@ import ru.practicum.ewm.request.service.ParticipationRequestService;
 import java.util.List;
 
 @RestController
-@RequestMapping(
-        "/users/{userId}/events/{eventId}/requests"
-)
+@RequestMapping("/users/{userId}/events/{eventId}/requests")
 @RequiredArgsConstructor
 public class EventRequestController {
 
     private final ParticipationRequestService requestService;
 
     @GetMapping
-    public List<ParticipationRequestDto> getEventRequests(
-            @PathVariable long userId,
-            @PathVariable long eventId
-    ) {
-        return requestService.getEventRequests(
-                userId,
-                eventId
-        );
+    public List<ParticipationRequestDto> getEventRequests(@PathVariable long userId, @PathVariable long eventId) {
+        return requestService.getEventRequests(userId, eventId);
     }
 
     @PatchMapping
-    public EventRequestStatusUpdateResult updateRequestStatus(
-            @PathVariable long userId,
-            @PathVariable long eventId,
-            @RequestBody
-            EventRequestStatusUpdateRequest updateRequest
-    ) {
-        return requestService.updateRequestStatus(
-                userId,
-                eventId,
-                updateRequest
-        );
+    public EventRequestStatusUpdateResult updateRequestStatus(@PathVariable long userId, @PathVariable long eventId,
+                                                              @RequestBody EventRequestStatusUpdateRequest updateRequest) {
+        return requestService.updateRequestStatus(userId, eventId, updateRequest);
     }
 }
