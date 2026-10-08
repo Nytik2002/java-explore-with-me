@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import ru.practicum.ewm.event.model.Event;
 import ru.practicum.ewm.event.model.EventState;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,6 +21,16 @@ public interface EventRepository
             }
     )
     Optional<Event> findById(Long eventId);
+
+    @EntityGraph(
+            attributePaths = {
+                    "category",
+                    "initiator"
+            }
+    )
+    List<Event> findAllByIdIn(
+            Collection<Long> ids
+    );
 
     @EntityGraph(
             attributePaths = {
