@@ -1,5 +1,6 @@
 package ru.practicum.ewm.event.controller;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
@@ -48,10 +49,12 @@ public class AdminEventController {
             LocalDateTime rangeEnd,
 
             @RequestParam(defaultValue = "0")
-            @PositiveOrZero int from,
+            @PositiveOrZero
+            int from,
 
             @RequestParam(defaultValue = "10")
-            @Positive int size
+            @Positive
+            int size
     ) {
         return adminEventService.getEvents(
                 users,
@@ -67,7 +70,9 @@ public class AdminEventController {
     @PatchMapping("/{eventId}")
     public EventFullDto updateEvent(
             @PathVariable long eventId,
-            @RequestBody UpdateEventAdminRequest request
+            @Valid
+            @RequestBody
+            UpdateEventAdminRequest request
     ) {
         return adminEventService.updateEvent(
                 eventId,

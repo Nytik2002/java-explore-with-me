@@ -269,7 +269,7 @@ public class AdminEventService {
         }
 
         if (eventDate.isBefore(minimumDate)) {
-            throw new ConflictException(
+            throw new IllegalArgumentException(
                     "Event date must be at least "
                             + "1 hour after publication"
             );

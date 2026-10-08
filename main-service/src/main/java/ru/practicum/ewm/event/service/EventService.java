@@ -273,7 +273,7 @@ public class EventService {
                         .plusHours(2);
 
         if (eventDate.isBefore(minimumDate)) {
-            throw new ConflictException(
+            throw new IllegalArgumentException(
                     "Event date must be at least "
                             + "2 hours from now"
             );

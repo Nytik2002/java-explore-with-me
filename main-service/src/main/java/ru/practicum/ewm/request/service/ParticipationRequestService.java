@@ -20,6 +20,7 @@ import ru.practicum.ewm.user.model.User;
 import ru.practicum.ewm.user.service.UserService;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -99,16 +100,23 @@ public class ParticipationRequestService {
             );
         }
 
-        RequestStatus status = RequestStatus.PENDING;
+        RequestStatus status =
+                RequestStatus.PENDING;
 
         if (event.getParticipantLimit() == 0
                 || !event.isRequestModeration()) {
-            status = RequestStatus.CONFIRMED;
+            status =
+                    RequestStatus.CONFIRMED;
         }
 
         ParticipationRequest request =
                 ParticipationRequest.builder()
-                        .created(LocalDateTime.now())
+                        .created(
+                                LocalDateTime.now()
+                                        .truncatedTo(
+                                                ChronoUnit.MICROS
+                                        )
+                        )
                         .event(event)
                         .requester(requester)
                         .status(status)
@@ -143,7 +151,9 @@ public class ParticipationRequestService {
                                 )
                         );
 
-        request.setStatus(RequestStatus.CANCELED);
+        request.setStatus(
+                RequestStatus.CANCELED
+        );
 
         ParticipationRequest savedRequest =
                 requestRepository.save(request);
@@ -199,10 +209,11 @@ public class ParticipationRequestService {
                         .collect(Collectors.toSet());
 
         List<ParticipationRequest> requests =
-                requestRepository.findAllByEventIdAndIdIn(
-                        eventId,
-                        uniqueIds
-                );
+                requestRepository
+                        .findAllByEventIdAndIdIn(
+                                eventId,
+                                uniqueIds
+                        );
 
         if (requests.size() != uniqueIds.size()) {
             throw new NotFoundException(
@@ -214,7 +225,7 @@ public class ParticipationRequestService {
         for (ParticipationRequest request : requests) {
             if (request.getStatus()
                     != RequestStatus.PENDING) {
-                throw new IllegalArgumentException(
+                throw new ConflictException(
                         "Request must have status PENDING"
                 );
             }
@@ -233,33 +244,43 @@ public class ParticipationRequestService {
 
     @Transactional(readOnly = true)
     public long getConfirmedCount(long eventId) {
-        return requestRepository.countByEventIdAndStatus(
-                eventId,
-                RequestStatus.CONFIRMED
-        );
+        return requestRepository
+                .countByEventIdAndStatus(
+                        eventId,
+                        RequestStatus.CONFIRMED
+                );
     }
 
     @Transactional(readOnly = true)
     public Map<Long, Long> getConfirmedCounts(
             Collection<Long> eventIds
     ) {
-        if (eventIds == null || eventIds.isEmpty()) {
+        if (eventIds == null
+                || eventIds.isEmpty()) {
             return Map.of();
         }
 
         List<Object[]> rows =
-                requestRepository.countByEventIdsAndStatus(
-                        eventIds,
-                        RequestStatus.CONFIRMED
-                );
+                requestRepository
+                        .countByEventIdsAndStatus(
+                                eventIds,
+                                RequestStatus.CONFIRMED
+                        );
 
-        Map<Long, Long> result = new HashMap<>();
+        Map<Long, Long> result =
+                new HashMap<>();
 
         for (Object[] row : rows) {
-            Long eventId = (Long) row[0];
-            Long count = (Long) row[1];
+            Long eventId =
+                    (Long) row[0];
 
-            result.put(eventId, count);
+            Long count =
+                    (Long) row[1];
+
+            result.put(
+                    eventId,
+                    count
+            );
         }
 
         return result;
@@ -270,13 +291,16 @@ public class ParticipationRequestService {
             List<ParticipationRequest> requests
     ) {
         long confirmedCount =
-                getConfirmedCount(event.getId());
+                getConfirmedCount(
+                        event.getId()
+                );
 
         int participantLimit =
                 event.getParticipantLimit();
 
         if (participantLimit > 0
-                && confirmedCount + requests.size()
+                && confirmedCount
+                + requests.size()
                 > participantLimit) {
             throw new ConflictException(
                     "The participant limit has been reached"
@@ -284,19 +308,23 @@ public class ParticipationRequestService {
         }
 
         requests.forEach(
-                request -> request.setStatus(
-                        RequestStatus.CONFIRMED
-                )
+                request ->
+                        request.setStatus(
+                                RequestStatus.CONFIRMED
+                        )
         );
 
         List<ParticipationRequest> confirmed =
-                requestRepository.saveAll(requests);
+                requestRepository.saveAll(
+                        requests
+                );
 
         List<ParticipationRequest> rejected =
                 new ArrayList<>();
 
         if (participantLimit > 0
-                && confirmedCount + confirmed.size()
+                && confirmedCount
+                + confirmed.size()
                 == participantLimit) {
             rejected =
                     requestRepository
@@ -306,15 +334,19 @@ public class ParticipationRequestService {
                             );
 
             rejected.forEach(
-                    request -> request.setStatus(
-                            RequestStatus.REJECTED
-                    )
+                    request ->
+                            request.setStatus(
+                                    RequestStatus.REJECTED
+                            )
             );
 
-            requestRepository.saveAll(rejected);
+            requestRepository.saveAll(
+                    rejected
+            );
         }
 
-        return EventRequestStatusUpdateResult.builder()
+        return EventRequestStatusUpdateResult
+                .builder()
                 .confirmedRequests(
                         confirmed.stream()
                                 .map(
@@ -338,16 +370,22 @@ public class ParticipationRequestService {
             List<ParticipationRequest> requests
     ) {
         requests.forEach(
-                request -> request.setStatus(
-                        RequestStatus.REJECTED
-                )
+                request ->
+                        request.setStatus(
+                                RequestStatus.REJECTED
+                        )
         );
 
         List<ParticipationRequest> rejected =
-                requestRepository.saveAll(requests);
+                requestRepository.saveAll(
+                        requests
+                );
 
-        return EventRequestStatusUpdateResult.builder()
-                .confirmedRequests(List.of())
+        return EventRequestStatusUpdateResult
+                .builder()
+                .confirmedRequests(
+                        List.of()
+                )
                 .rejectedRequests(
                         rejected.stream()
                                 .map(
@@ -360,9 +398,14 @@ public class ParticipationRequestService {
     }
 
     private EventRequestStatusUpdateResult emptyResult() {
-        return EventRequestStatusUpdateResult.builder()
-                .confirmedRequests(List.of())
-                .rejectedRequests(List.of())
+        return EventRequestStatusUpdateResult
+                .builder()
+                .confirmedRequests(
+                        List.of()
+                )
+                .rejectedRequests(
+                        List.of()
+                )
                 .build();
     }
 
