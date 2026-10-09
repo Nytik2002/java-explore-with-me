@@ -15,8 +15,7 @@ import java.util.List;
 
 public class StatsClient {
 
-    private static final DateTimeFormatter DATE_TIME_FORMATTER =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final RestTemplate restTemplate;
     private final String serverUrl;
@@ -27,41 +26,23 @@ public class StatsClient {
     }
 
     public void saveHit(EndpointHit endpointHit) {
-        restTemplate.postForEntity(
-                serverUrl + "/hit",
-                endpointHit,
-                Void.class
-        );
+        restTemplate.postForEntity(serverUrl + "/hit", endpointHit, Void.class);
     }
 
-    public List<ViewStats> getStats(
-            LocalDateTime start,
-            LocalDateTime end,
-            List<String> uris,
-            boolean unique
-    ) {
-        UriComponentsBuilder uriBuilder = UriComponentsBuilder
-                .fromUriString(serverUrl + "/stats")
+    public List<ViewStats> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(serverUrl + "/stats")
                 .queryParam("start", start.format(DATE_TIME_FORMATTER))
-                .queryParam("end", end.format(DATE_TIME_FORMATTER))
-                .queryParam("unique", unique);
+                .queryParam("end", end.format(DATE_TIME_FORMATTER)).queryParam("unique", unique);
 
         if (uris != null && !uris.isEmpty()) {
             uriBuilder.queryParam("uris", uris.toArray());
         }
 
-        URI uri = uriBuilder
-                .build()
-                .encode()
-                .toUri();
+        URI uri = uriBuilder.build().encode().toUri();
 
-        ResponseEntity<List<ViewStats>> response = restTemplate.exchange(
-                uri,
-                HttpMethod.GET,
-                null,
-                new ParameterizedTypeReference<>() {
-                }
-        );
+        ResponseEntity<List<ViewStats>> response =
+                restTemplate.exchange(uri, HttpMethod.GET, null, new ParameterizedTypeReference<>() {
+                });
 
         return response.getBody();
     }
